@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Montserrat:wght@100..900&family=Inter:wght@100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Montserrat", sans-serif;
+
+  --color-beige-50: #FFFDF9;
+  --color-beige-100: #FDF8F0;
+  --color-beige-200: #F5E6CC;
+  --color-beige-300: #EAD2AC;
+  --color-beige-400: #D9B99B;
+  --color-beige-500: #C29E7E;
+  --color-beige-600: #A67C52;
+  --color-beige-700: #8A6440;
+  --color-beige-800: #6B4D31;
+  --color-beige-900: #4B3622;
+}
+
+body {
+  @apply bg-beige-50 text-beige-900 font-sans;
+}
+
+.serif {
+  @apply font-serif;
+}
+
+.display {
+  @apply font-display;
+}
+
+/* Custom patterns from design guidelines */
+.pill-image {
+  border-radius: 9999px;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+}
+
+.card-luxury {
+  @apply bg-white rounded-[32px] shadow-sm border border-beige-200 transition-all duration-300 hover:shadow-md;
+}
+
+.btn-luxury {
+  @apply bg-beige-800 text-white px-8 py-3 rounded-full font-medium tracking-wide transition-all duration-300 hover:bg-beige-900 active:scale-95 disabled:opacity-50;
+}
+
+.btn-outline-luxury {
+  @apply border border-beige-800 text-beige-800 px-8 py-3 rounded-full font-medium tracking-wide transition-all duration-300 hover:bg-beige-800 hover:text-white active:scale-95;
+}
+
+/* Calendar Overrides */
+.react-calendar {
+  @apply !border-none !bg-transparent !font-sans !w-full;
+}
+
+.react-calendar__tile {
+  @apply !rounded-full !aspect-square !flex !items-center !justify-center !transition-colors;
+}
+
+.react-calendar__tile--active {
+  @apply !bg-beige-800 !text-white;
+}
+
+.react-calendar__tile--now {
+  @apply !bg-beige-200 !text-beige-900;
+}
+
+.date-available {
+  @apply !bg-green-100 !text-green-800;
+}
+
+.date-taken {
+  @apply !bg-red-100 !text-red-800;
+}
