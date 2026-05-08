@@ -39,7 +39,7 @@
     "vite": "^8.0.10"
   }
   "scripts": {
-  "build": "vite build",
-  "preview": "vite preview"
-}
+    "build": "vite build",
+    "preview": "vite preview"
+  }
 }
