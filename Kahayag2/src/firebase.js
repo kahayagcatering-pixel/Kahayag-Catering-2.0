@@ -5,12 +5,12 @@ import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: "kahayagcateringservices.firebaseapp.com",
-  projectId: "kahayagcateringservices",
-  storageBucket: "kahayagcateringservices.firebasestorage.app",
-  messagingSenderId: "907124275570",
-  appId: "1:907124275570:web:8c8fdb8fea46b556fa05eb",
-  measurementId: "G-V2VE1N3XY0"
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);

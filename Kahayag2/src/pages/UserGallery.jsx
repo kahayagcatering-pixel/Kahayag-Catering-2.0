@@ -10,7 +10,6 @@ export default function UserGallery({ searchTerm }) {
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentImageIdx, setCurrentImageIdx] = useState(0);
-  const [failedImages, setFailedImages] = useState(new Set());
 
   useEffect(() => {
     const q = query(collection(db, 'gallery'), orderBy('date', 'desc'));
@@ -42,13 +41,6 @@ export default function UserGallery({ searchTerm }) {
     setCurrentImageIdx((prev) => (prev - 1 + selectedEvent.images.length) % selectedEvent.images.length);
   };
 
-  const handleImageError = (url) => {
-    setFailedImages(prev => new Set([...prev, url]));
-  };
-
-  const FALLBACK_IMG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f5f0e8'/%3E%3Crect x='160' y='100' width='80' height='60' rx='6' fill='%23d6cfc4'/%3E%3Ccircle cx='200' cy='135' r='18' fill='%23b8b0a5'/%3E%3C/svg%3E`;
-const getImageUrl = (url) => failedImages.has(url) ? FALLBACK_IMG : url;
-
   if (loading) return <div className="flex items-center justify-center p-20 text-beige-400 italic">Exploring archive...</div>;
 
   return (
@@ -70,20 +62,13 @@ const getImageUrl = (url) => failedImages.has(url) ? FALLBACK_IMG : url;
             onClick={() => openLightbox(event)}
             className="break-inside-avoid relative group cursor-pointer bg-white rounded-[40px] overflow-hidden border border-beige-50 hover:shadow-2xl transition-all duration-700"
           >
-            <div className="relative overflow-hidden bg-beige-50">
-               {event.images && event.images.length > 0 ? (
-                 <img 
-                    src={getImageUrl(event.images[0])} 
-                    alt={event.title}
-                    className="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-1000"
-                    crossOrigin="anonymous"
-                    onError={() => handleImageError(event.images[0])}
-                 />
-               ) : (
-                 <div className="w-full h-64 flex items-center justify-center text-beige-200">
-                    <ImageIcon size={48} />
-                 </div>
-               )}
+            <div className="relative overflow-hidden">
+               <img 
+                  src={event.images?.[0] || 'https://images.unsplash.com/photo-1519222970733-f546218fa6d7?q=80&w=800'} 
+                  alt={event.title}
+                  className="w-full h-auto object-cover group-hover:scale-110 transition-transform duration-1000"
+                  referrerPolicy="no-referrer"
+               />
                <div className="absolute inset-0 bg-beige-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center backdrop-blur-[2px]">
                   <div className="bg-white/90 p-4 rounded-full text-beige-900 shadow-xl opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 delay-100">
                     <ImageIcon size={24} />
@@ -123,45 +108,38 @@ const getImageUrl = (url) => failedImages.has(url) ? FALLBACK_IMG : url;
       {/* Lightbox */}
       <AnimatePresence>
         {selectedEvent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-beige-900/95 backdrop-blur-2xl p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-beige-900/95 backdrop-blur-2xl">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-6xl flex flex-col md:flex-row gap-8 md:gap-12 items-center"
+              className="relative w-full max-w-6xl p-6 sm:p-12 flex flex-col md:flex-row gap-12 items-center"
             >
               <button 
                 onClick={() => setSelectedEvent(null)}
-                className="absolute top-4 right-4 md:top-10 md:right-10 z-10 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md"
+                className="absolute top-10 right-10 z-10 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md"
               >
                 <X size={24} />
               </button>
 
-              <div className="flex-1 relative group w-full h-[50vh] md:h-[70vh] flex items-center justify-center mt-12 md:mt-0">
+              <div className="flex-1 relative group w-full h-[50vh] md:h-[70vh] flex items-center justify-center">
                  <AnimatePresence mode="wait">
-                    {selectedEvent.images && selectedEvent.images[currentImageIdx] ? (
-                      <motion.img 
-                        key={currentImageIdx}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        src={getImageUrl(selectedEvent.images[currentImageIdx])}
-                        alt={`${selectedEvent.title} - ${currentImageIdx + 1}`}
-                        className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl"
-                        referrerPolicy="no-referrer"
-                        onError={() => handleImageError(selectedEvent.images[currentImageIdx])}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-full text-beige-300">
-                        <ImageIcon size={64} />
-                      </div>
-                    )}
+                    <motion.img 
+                      key={currentImageIdx}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      src={selectedEvent.images[currentImageIdx]}
+                      alt={`${selectedEvent.title} - ${currentImageIdx + 1}`}
+                      className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl"
+                      referrerPolicy="no-referrer"
+                    />
                  </AnimatePresence>
                  
-                 {selectedEvent.images && selectedEvent.images.length > 1 && (
+                 {selectedEvent.images.length > 1 && (
                    <>
-                     <button onClick={prevImage} className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-3 md:p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all backdrop-blur-md"><ChevronLeft size={24} /></button>
-                     <button onClick={nextImage} className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-3 md:p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all backdrop-blur-md"><ChevronRight size={24} /></button>
+                     <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all backdrop-blur-md"><ChevronLeft size={24} /></button>
+                     <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all backdrop-blur-md"><ChevronRight size={24} /></button>
                      
                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                         {selectedEvent.images.map((_, i) => (
@@ -172,30 +150,30 @@ const getImageUrl = (url) => failedImages.has(url) ? FALLBACK_IMG : url;
                  )}
               </div>
 
-              <div className="w-full md:w-80 space-y-6 md:space-y-8 text-white px-4 md:px-0 pb-8 md:pb-0">
+              <div className="w-full md:w-80 space-y-8 text-white">
                  <div>
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-beige-400">{selectedEvent.type}</span>
-                    <h2 className="serif text-4xl md:text-5xl font-bold italic mt-4 leading-tight">{selectedEvent.title}</h2>
+                    <h2 className="serif text-5xl font-bold italic mt-4 leading-tight">{selectedEvent.title}</h2>
                  </div>
                  
-                 <div className="space-y-4 md:space-y-6">
+                 <div className="space-y-6">
                     <div className="flex items-center gap-4">
-                       <div className="p-3 bg-white/10 rounded-2xl flex-shrink-0"><Calendar size={20} className="text-beige-300" /></div>
+                       <div className="p-3 bg-white/10 rounded-2xl"><Calendar size={20} className="text-beige-300" /></div>
                        <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-beige-400">Captured On</p>
                           <p className="text-lg font-bold">{format(new Date(selectedEvent.date), 'PPPP')}</p>
                        </div>
                     </div>
                     <div className="flex items-center gap-4">
-                       <div className="p-3 bg-white/10 rounded-2xl flex-shrink-0"><ImageIcon size={20} className="text-beige-300" /></div>
+                       <div className="p-3 bg-white/10 rounded-2xl"><ImageIcon size={20} className="text-beige-300" /></div>
                        <div>
                           <p className="text-[10px] font-black uppercase tracking-widest text-beige-400">Collection Size</p>
-                          <p className="text-lg font-bold">{selectedEvent.images?.length || 0} High-Res Assets</p>
+                          <p className="text-lg font-bold">{selectedEvent.images.length} High-Res Assets</p>
                        </div>
                     </div>
                  </div>
 
-                 <div className="pt-8 md:pt-12">
+                 <div className="pt-12">
                    <p className="text-xs text-beige-500 leading-relaxed font-medium italic opacity-60">
                     "This event exemplifies our dedication to refined taste and aesthetic precision in catering."
                    </p>

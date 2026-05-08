@@ -91,6 +91,10 @@ export default function RecentOrders({ user }) {
     }
   };
 
+  // helper to compute total safely
+  const getTotal = (order) =>
+    order.totalPrice || order.items.reduce((s, i) => s + (i.price * i.quantity), 0);
+
   if (loading) return <div className="flex items-center justify-center p-20 text-beige-400">Loading orders...</div>;
 
   return (
@@ -175,14 +179,37 @@ export default function RecentOrders({ user }) {
                       <div className="space-y-6">
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-beige-400">Order Menu</h4>
                         <div className="space-y-3">
+                          {/* ── ADDITION 1: price per item ── */}
                           {order.items.map((item, i) => (
                             <div key={i} className="flex justify-between items-center bg-white p-4 rounded-2xl border border-beige-100 shadow-sm">
                               <span className="font-bold text-sm text-beige-800">{item.name}</span>
-                              <span className="text-xs font-black text-beige-400 uppercase tracking-widest">Qty: {item.quantity}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black text-beige-400">x{item.quantity}</span>
+                                <span className="bg-beige-50 px-3 py-1 rounded-full font-black text-beige-700 text-[10px] border border-beige-100">
+                                  ₱{(item.price * item.quantity).toLocaleString()}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
+
+                        {/* ── ADDITION 2: total price ── */}
+                        <div className="flex justify-between items-center px-2 pt-2">
+                          <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">Total Price</span>
+                          <span className="text-2xl font-black text-beige-900">
+                            ₱{getTotal(order).toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* ── ADDITION 3: 70% down payment ── */}
+                        <div className="flex justify-between items-center px-2">
+                          <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">70% Down Payment</span>
+                          <span className="text-sm font-black text-amber-600">
+                            ₱{Math.ceil(getTotal(order) * 0.7).toLocaleString()}
+                          </span>
+                        </div>
                       </div>
+
                       <div className="space-y-6">
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-beige-400">Custom Requests</h4>
                         <div className="bg-white p-6 rounded-[32px] border border-beige-100 shadow-sm text-sm text-beige-600 leading-relaxed italic whitespace-pre-line min-h-[100px]">

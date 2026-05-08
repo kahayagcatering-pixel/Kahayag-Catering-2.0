@@ -51,7 +51,7 @@ export default function UserMenu({ searchTerm }) {
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] text-beige-400 font-bold uppercase tracking-widest pl-2">Service Type</span>
             <div className="flex gap-1 bg-white p-1.5 rounded-2xl border border-beige-100 shadow-sm">
-              {['All', 'Events', 'Packed lunch'].map(tab => (
+              {['All', 'Food Trays', 'Packed Lunch'].map(tab => (
                 <button 
                   key={tab}
                   onClick={() => setActiveService(tab)}
@@ -134,14 +134,7 @@ export default function UserMenu({ searchTerm }) {
                 </div>
                 <p className="text-xs text-beige-400 font-medium mb-4 line-clamp-2 italic leading-relaxed">"{food.description}"</p>
                 
-                <div className="flex items-center justify-between pt-4 border-t border-beige-50">
-                   <span className="text-[10px] text-beige-400 font-bold uppercase tracking-widest">
-                     Capacity: {food.category === 'Events' ? 'Choice of pax' : '1 Box'}
-                   </span>
-                   <button className="text-beige-800 hover:text-beige-950 transition-colors p-2">
-                      <Plus className="w-5 h-5" />
-                   </button>
-                </div>
+                
               </div>
             </motion.div>
           ))}

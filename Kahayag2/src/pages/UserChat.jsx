@@ -88,14 +88,7 @@ export default function UserChat({ user }) {
       <div className="w-80 border-r border-beige-100 flex flex-col bg-beige-50/50">
         <div className="p-6 border-b border-beige-100">
           <h2 className="display text-lg font-bold mb-4">Messages</h2>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-beige-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search chat..." 
-              className="w-full pl-10 pr-4 py-2 bg-white border border-beige-200 rounded-xl text-xs"
-            />
-          </div>
+          
         </div>
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">

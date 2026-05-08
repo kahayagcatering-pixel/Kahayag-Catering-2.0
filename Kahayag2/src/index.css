@@ -17,7 +17,53 @@
   --color-beige-800: #6B4D31;
   --color-beige-900: #4B3622;
 }
+/* ── Calendar tile base hover & focus ── */
+.react-calendar__tile:hover,
+.react-calendar__tile:focus {
+  background-color: #d4b896 !important;
+  color: #1a1a1a !important;
+  border-radius: 12px;
+}
 
+/* ── Selected / clicked date ── */
+.react-calendar__tile--active,
+.react-calendar__tile--active:hover,
+.react-calendar__tile--active:focus {
+  background-color: #7a5c44 !important;
+  color: white !important;
+  border-radius: 12px;
+  font-weight: 900;
+}
+
+/* ── Available dates hover ── */
+.date-available:hover {
+  background-color: #bbf7d0 !important;
+  color: #14532d !important;
+  border-radius: 12px;
+}
+
+/* ── Taken dates — block hover style change ── */
+.date-taken:hover {
+  background-color: #fecaca !important;
+  color: #7f1d1d !important;
+  border-radius: 12px;
+  cursor: not-allowed !important;
+}
+
+/* ── Today's tile ── */
+.react-calendar__tile--now {
+  background-color: #fef9f0 !important;
+  border: 2px solid #d4b896 !important;
+  border-radius: 12px;
+}
+
+/* ── Disabled/past dates ── */
+.react-calendar__tile:disabled,
+.react-calendar__tile:disabled:hover {
+  background-color: transparent !important;
+  color: #d1c5b8 !important;
+  cursor: not-allowed !important;
+}
 body {
   @apply bg-beige-50 text-beige-900 font-sans;
 }

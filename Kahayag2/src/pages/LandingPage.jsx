@@ -113,7 +113,7 @@ const MenuSection = () => {
                 </div>
                 <p className="text-xs text-beige-500 line-clamp-1 mb-1">{item.description}</p>
                 <span className="text-[10px] bg-beige-100 px-2 py-0.5 rounded-full text-beige-600 font-bold uppercase tracking-tighter">
-                  Good for {item.category === 'Events' ? 'Choice of pax' : '1 Pax'}
+                  
                 </span>
               </div>
             </motion.div>
@@ -274,7 +274,7 @@ const Contact = () => (
         <div className="grid md:grid-cols-3 gap-8 justify-center items-center max-w-3xl mx-auto">
           <div className="flex flex-col items-center gap-3">
             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-beige-800 shadow-sm"><Phone size={24} /></div>
-            <div><p className="text-xs text-beige-500 font-bold uppercase tracking-widest mb-1">Call Us</p><span className="font-semibold text-beige-900">+63 (912) 345-6789</span></div>
+            <div><p className="text-xs text-beige-500 font-bold uppercase tracking-widest mb-1">Call Us</p><span className="font-semibold text-beige-900">+63 (961) 884-9550 <br></br> +63 (991) 701-2107 </span></div>
           </div>
           <div className="flex flex-col items-center gap-3">
             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-beige-800 shadow-sm"><Mail size={24} /></div>
@@ -282,7 +282,7 @@ const Contact = () => (
           </div>
           <div className="flex flex-col items-center gap-3">
             <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-beige-800 shadow-sm"><FaFacebook size={24} /></div>
-            <div><p className="text-xs text-beige-500 font-bold uppercase tracking-widest mb-1">Facebook</p><span className="font-semibold text-beige-900">Kahayag Catering Box</span></div>
+            <div><p className="text-xs text-beige-500 font-bold uppercase tracking-widest mb-1">Facebook</p><span className="font-semibold text-beige-900">Kahayag Catering Services</span></div>
           </div>
         </div>
       </div>
@@ -300,7 +300,7 @@ const Footer = () => (
           <img src="/KahayagLogo.png" alt="Kahayag Logo" className="w-12 h-12 object-contain" />
           <div>
             <span className="display font-bold text-2xl tracking-tight text-beige-900">Kahayag Catering</span>
-            <p className="text-[10px] text-beige-400 font-bold tracking-[0.2em] uppercase">The Art of Fine Dining</p>
+            <p className="text-[10px] text-beige-400 font-bold tracking-[0.2em] uppercase">Your Vision. Our Masterpiece.</p>
           </div>
         </div>
         <div className="flex gap-10">

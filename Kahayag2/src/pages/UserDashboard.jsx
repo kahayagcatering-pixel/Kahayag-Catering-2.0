@@ -57,8 +57,7 @@ const Sidebar = ({ user, handleLogout }) => {
   return (
     <div className="w-72 bg-white border-r border-beige-200 flex flex-col h-screen fixed left-0 top-0">
       <Link to="/" className="p-8 border-b border-beige-100 mb-6 flex flex-col items-center text-center group">
-        <img src="/KahayagLogo.png" alt="Kahayag Logo" className="w-24 h-auto mb-2 group-hover:scale-105 transition-transform" />        
-        <div>
+<img src="/KahayagLogo.png" alt="Kahayag Logo" className="w-24 h-auto mb-2 group-hover:scale-105 transition-transform" />        <div>
           <div className="flex items-center gap-2 mb-1 justify-center">
             <span className="display font-bold text-lg text-beige-900">Kahayag</span>
           </div>
@@ -86,28 +85,22 @@ const Sidebar = ({ user, handleLogout }) => {
       </div>
 
       <div className="p-6 border-t border-beige-100">
-        {user ? (
-          <>
-            <div className="flex items-center gap-3 p-3 bg-beige-50 rounded-2xl mb-4">
-              <div className="w-10 h-10 rounded-full bg-beige-300 flex items-center justify-center font-bold text-beige-800 uppercase">
-                {user?.name?.charAt(0) || '?'}
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-bold text-beige-900 truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-beige-500 truncate">{user?.email || ''}</p>
-              </div>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center gap-4 px-4 py-3 text-red-500 hover:bg-red-50 rounded-2xl transition-all"
-            >
-              <LogOut size={20} />
-              <span className="font-semibold text-sm">Logout</span>
-            </button>
-          </>
-        ) : (
-          <p className="text-sm text-beige-400">Loading user...</p>
-        )}
+        <div className="flex items-center gap-3 p-3 bg-beige-50 rounded-2xl mb-4">
+          <div className="w-10 h-10 rounded-full bg-beige-300 flex items-center justify-center font-bold text-beige-800 uppercase">
+            {user.name.charAt(0)}
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm font-bold text-beige-900 truncate">{user.name}</p>
+            <p className="text-xs text-beige-500 truncate">{user.email}</p>
+          </div>
+        </div>
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-4 px-4 py-3 text-red-500 hover:bg-red-50 rounded-2xl transition-all"
+        >
+          <LogOut size={20} />
+          <span className="font-semibold text-sm">Logout</span>
+        </button>
       </div>
     </div>
   );

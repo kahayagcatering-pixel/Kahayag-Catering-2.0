@@ -8,7 +8,6 @@ import {
     MapPin, 
     AlertCircle,
     Check,
-    X,
     Trash2
 } from 'lucide-react';
 import { format, isSameDay, isAfter } from 'date-fns';
@@ -24,7 +23,6 @@ export default function ApprovedOrders({ searchTerm }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Update "now" every minute
     const timer = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
@@ -76,13 +74,17 @@ export default function ApprovedOrders({ searchTerm }) {
 
   const filteredOrders = orders.filter(o => 
     o.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    o.id.includes(searchTerm)
+    o.id.includes(searchTerm) ||
+    (o.eventName && o.eventName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const parseOrderDate = (date) => {
     if (date instanceof Timestamp) return date.toDate();
     return new Date(date);
   };
+
+  const getTotal = (order) =>
+    order.totalPrice || order.items.reduce((s, i) => s + (i.price * i.quantity), 0);
 
   if (loading) return <div className="flex items-center justify-center p-20 text-beige-400">Loading schedule...</div>;
 
@@ -117,12 +119,20 @@ export default function ApprovedOrders({ searchTerm }) {
                     </div>
                     <div>
                         <h3 className="font-bold">{order.userName}</h3>
-                        <p className={`text-[10px] uppercase font-bold ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-500'}`}>{order.eventType || order.service}</p>
+                        {/* ── FIX: show event name below customer name in list card ── */}
+                        <p className={`text-xs font-bold italic ${selectedOrder?.id === order.id ? 'text-beige-300' : 'text-beige-600'}`}>
+                          {order.eventName || '—'}
+                        </p>
+                        <p className={`text-[10px] uppercase font-bold ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-500'}`}>
+                          {order.eventType || order.service}
+                        </p>
                     </div>
                 </div>
                 <div className="text-right">
-                    <p className={`text-sm font-bold ${selectedOrder?.id === order.id ? 'text-white' : 'text-beige-900'}`}>{format(parseOrderDate(order.date), 'MMM dd')}</p>
-                    <p className={`text-xs opacity-60`}>{order.time}</p>
+                    <p className={`text-sm font-bold ${selectedOrder?.id === order.id ? 'text-white' : 'text-beige-900'}`}>
+                      {format(parseOrderDate(order.date), 'MMM dd')}
+                    </p>
+                    <p className="text-xs opacity-60">{order.time}</p>
                 </div>
             </div>
           </motion.div>
@@ -148,7 +158,16 @@ export default function ApprovedOrders({ searchTerm }) {
                <div>
                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 inline-block">Order Approved</span>
                  <h2 className="serif text-3xl">{selectedOrder.userName}</h2>
-                 <p className="text-beige-500 text-sm italic mt-2">"{selectedOrder.service} package for {selectedOrder.eventType || 'Standard'} event"</p>
+                 {/* ── FIX: show event name prominently in detail panel ── */}
+                 {selectedOrder.eventName && (
+                   <p className="text-beige-900 font-bold text-lg mt-1 italic">
+                     "{selectedOrder.eventName}"
+                   </p>
+                 )}
+                 <p className="text-beige-500 text-sm italic mt-1">
+                   {selectedOrder.service} package
+                   {selectedOrder.eventType ? ` — ${selectedOrder.eventType}` : ''}
+                 </p>
                </div>
             </div>
 
@@ -182,13 +201,33 @@ export default function ApprovedOrders({ searchTerm }) {
 
             <div className="space-y-4">
                <h3 className="font-bold text-sm">Dishes to Prepare</h3>
-               <div className="grid grid-cols-2 gap-4">
+
+               <div className="bg-beige-50 rounded-[24px] p-6 space-y-3 border border-beige-100">
                   {selectedOrder.items.map((item, i) => (
-                    <div key={i} className="flex justify-between items-center p-3 bg-beige-50 rounded-xl">
-                      <span className="text-xs font-medium text-beige-700">{item.name}</span>
-                      <span className="text-sm font-bold text-beige-900">x{item.quantity}</span>
+                    <div key={i} className="flex justify-between text-sm items-center pb-3 border-b border-beige-100 last:border-none">
+                      <span className="text-beige-800 font-bold">{item.name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-beige-400">x{item.quantity}</span>
+                        <span className="bg-white px-3 py-1 rounded-full font-black text-beige-700 text-[10px]">
+                          ₱{(item.price * item.quantity).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   ))}
+               </div>
+
+               <div className="flex justify-between items-center px-2 pt-2">
+                 <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">Total Price</span>
+                 <span className="text-2xl font-black text-beige-900">
+                   ₱{getTotal(selectedOrder).toLocaleString()}
+                 </span>
+               </div>
+
+               <div className="flex justify-between items-center px-2">
+                 <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">70% Down Payment</span>
+                 <span className="text-sm font-black text-amber-600">
+                   ₱{Math.ceil(getTotal(selectedOrder) * 0.7).toLocaleString()}
+                 </span>
                </div>
             </div>
 

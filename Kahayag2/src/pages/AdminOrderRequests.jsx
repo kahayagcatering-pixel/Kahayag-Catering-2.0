@@ -22,11 +22,11 @@ import { collection, onSnapshot, query, where, orderBy, doc, updateDoc, Timestam
 export default function OrderRequests({ searchTerm }) {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
-  const [allOrders, setAllOrders] = useState([]); // For conflict checking
+  const [allOrders, setAllOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [sortBy, setSortBy] = useState('time-asc'); // Prioritize first requester
+  const [sortBy, setSortBy] = useState('time-asc');
 
   useEffect(() => {
     const qAll = query(collection(db, 'orders'));
@@ -43,7 +43,6 @@ export default function OrderRequests({ searchTerm }) {
   }, []);
 
   const handleApprove = async (order) => {
-    // Check for conflicts in approved orders
     const approvedOrders = allOrders.filter(o => o.status === 'Approved');
     
     const orderDate = order.date instanceof Timestamp ? order.date.toDate() : (order.date?.seconds ? new Date(order.date.seconds * 1000) : new Date(order.date));
@@ -150,14 +149,18 @@ export default function OrderRequests({ searchTerm }) {
                   </div>
                   <div>
                     <h3 className="font-bold text-lg">{order.userName}</h3>
-                    <p className={`text-xs font-bold uppercase tracking-widest ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-400'}`}>
+                    {/* ── FIX: event name shown below customer name in list card ── */}
+                    <p className={`text-xs font-bold italic ${selectedOrder?.id === order.id ? 'text-beige-300' : 'text-beige-600'}`}>
+                      {order.eventName || '—'}
+                    </p>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-400'}`}>
                       {order.id.slice(-6)}
                     </p>
                   </div>
                </div>
                <div className="text-right">
-                  <p className={`text-[10px] font-bold uppercase tracking-widest ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-400'}`}>Event Name</p>
-                  <p className="font-bold italic">{order.eventName || 'Not Named'}</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-400'}`}>Service</p>
+                  <p className="font-bold italic">{order.service || 'N/A'}</p>
                </div>
             </div>
             
@@ -203,6 +206,12 @@ export default function OrderRequests({ searchTerm }) {
               <div className="flex justify-between items-start relative z-10">
                   <div className="space-y-1">
                     <h2 className="serif text-4xl italic font-bold text-beige-900 leading-tight">{selectedOrder.userName}</h2>
+                    {/* ── FIX: event name shown prominently in detail panel ── */}
+                    {selectedOrder.eventName && (
+                      <p className="text-beige-900 font-bold text-lg italic">
+                        "{selectedOrder.eventName}"
+                      </p>
+                    )}
                     <p className="text-[10px] text-beige-400 font-bold uppercase tracking-[0.2em]">{selectedOrder.userEmail}</p>
                     <p className="text-xs text-beige-500 flex items-center gap-2 pt-2"><Clock size={14} /> Requested {formatDateTime(selectedOrder.createdAt)}</p>
                   </div>
@@ -252,18 +261,37 @@ export default function OrderRequests({ searchTerm }) {
                     <Package size={14} className="text-beige-800" /> Menu Selection ({selectedOrder.items.length})
                   </h4>
                   <div className="bg-beige-50 rounded-[32px] p-8 max-h-52 overflow-y-auto custom-scrollbar space-y-4 border border-beige-100">
-                     {selectedOrder.items.map((item, i) => (
-                       <div key={i} className="flex justify-between text-sm items-center pb-3 border-b border-beige-100 last:border-none">
-                          <span className="text-beige-800 font-bold">{item.name}</span>
-                          <span className="bg-white px-3 py-1 rounded-full font-black text-beige-400 text-[10px]">QTY {item.quantity}</span>
-                       </div>
-                     ))}
-                     {selectedOrder.customRequests && (
-                        <div className="pt-4 mt-4">
-                           <p className="text-[10px] uppercase font-bold text-beige-300 tracking-[0.2em] mb-3">Custom Client Requests</p>
-                           <p className="text-sm italic text-beige-600 bg-white p-5 rounded-2xl border border-beige-100 line-relaxed">"{selectedOrder.customRequests}"</p>
+                    {selectedOrder.items.map((item, i) => (
+                      <div key={i} className="flex justify-between text-sm items-center pb-3 border-b border-beige-100 last:border-none">
+                        <span className="text-beige-800 font-bold">{item.name}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-black text-beige-400">x{item.quantity}</span>
+                          <span className="bg-white px-3 py-1 rounded-full font-black text-beige-700 text-[10px]">
+                            ₱{(item.price * item.quantity).toLocaleString()}
+                          </span>
                         </div>
-                     )}
+                      </div>
+                    ))}
+                    {selectedOrder.customRequests && (
+                       <div className="pt-4 mt-4">
+                          <p className="text-[10px] uppercase font-bold text-beige-300 tracking-[0.2em] mb-3">Custom Client Requests</p>
+                          <p className="text-sm italic text-beige-600 bg-white p-5 rounded-2xl border border-beige-100 line-relaxed">"{selectedOrder.customRequests}"</p>
+                       </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center px-2 pt-2">
+                    <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">Total Price</span>
+                    <span className="text-2xl font-black text-beige-900">
+                      ₱{(selectedOrder.totalPrice || selectedOrder.items.reduce((s, i) => s + (i.price * i.quantity), 0)).toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center px-2">
+                    <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">70% Down Payment</span>
+                    <span className="text-sm font-black text-amber-600">
+                      ₱{Math.ceil((selectedOrder.totalPrice || selectedOrder.items.reduce((s, i) => s + (i.price * i.quantity), 0)) * 0.7).toLocaleString()}
+                    </span>
                   </div>
               </div>
 

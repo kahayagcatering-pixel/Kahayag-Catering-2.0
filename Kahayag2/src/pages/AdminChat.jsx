@@ -112,14 +112,7 @@ export default function AdminChat({ user, searchTerm }) {
               {conversations.filter(c => c.unreadByAdmin).length} NEW
             </div>
           </div>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-beige-300" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search client name..." 
-              className="w-full pl-12 pr-4 py-3 bg-white border border-beige-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-beige-200 outline-none transition-all"
-            />
-          </div>
+          
         </div>
         
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
