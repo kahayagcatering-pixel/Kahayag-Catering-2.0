@@ -52,7 +52,7 @@ export default function UserGallery({ searchTerm }) {
         </p>
       </div>
 
-      {/* Grid instead of columns — uniform card heights */}
+      {/* Grid with uniform card heights */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
         {filteredEvents.map((event, idx) => (
           <motion.div
@@ -61,10 +61,10 @@ export default function UserGallery({ searchTerm }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
             onClick={() => openLightbox(event)}
-            className="relative group cursor-pointer bg-white rounded-[40px] overflow-hidden border border-beige-50 hover:shadow-2xl transition-all duration-700"
+            className="group relative bg-white rounded-[40px] border border-beige-50 shadow-sm overflow-hidden hover:shadow-2xl transition-all duration-700 cursor-pointer flex flex-col h-full"
           >
-            {/* Fixed aspect ratio — key fix */}
-            <div className="relative aspect-[4/3] overflow-hidden bg-beige-50">
+            {/* Fixed aspect ratio image container */}
+            <div className="aspect-[4/5] overflow-hidden relative bg-beige-50 shrink-0">
               {event.images?.[0] ? (
                 <img
                   src={event.images[0]}
@@ -82,20 +82,21 @@ export default function UserGallery({ searchTerm }) {
                 </div>
               </div>
               {event.images?.length > 1 && (
-                <div className="absolute top-4 right-4 bg-white/90 px-3 py-1 rounded-full text-[10px] font-black text-beige-800">
+                <div className="absolute top-4 right-4 bg-white/90 px-3 py-1 rounded-full text-[10px] font-black text-beige-800 z-10">
                   +{event.images.length - 1} more
                 </div>
               )}
             </div>
 
-            <div className="p-8">
+            {/* Fixed height text section */}
+            <div className="p-8 space-y-3 flex flex-col flex-grow">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-beige-400">{event.type}</span>
-              <h3 className="serif text-2xl font-bold text-beige-900 mt-2 italic truncate">{event.title}</h3>
-              <div className="flex items-center gap-4 mt-6 pt-6 border-t border-beige-50">
-                <div className="flex items-center gap-2 text-[10px] font-black text-beige-400 uppercase tracking-widest">
-                  <Calendar size={12} className="text-beige-300" />
+              <h3 className="serif text-2xl font-bold text-beige-900 italic line-clamp-2">{event.title}</h3>
+              <div className="flex items-center gap-2 mt-auto pt-6 border-t border-beige-50">
+                <Calendar size={12} className="text-beige-300 shrink-0" />
+                <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">
                   {format(new Date(event.date + 'T00:00:00'), 'MMMM yyyy')}
-                </div>
+                </span>
               </div>
             </div>
           </motion.div>
