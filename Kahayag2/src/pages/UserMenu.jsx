@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Filter } from 'lucide-react';
+import { Plus, Info, Filter, ArrowUpDown } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
@@ -14,16 +14,18 @@ export default function UserMenu({ searchTerm }) {
   useEffect(() => {
     const q = query(collection(db, 'foods'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setFoods(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const foodData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setFoods(foodData);
       setLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'foods');
     });
+
     return () => unsubscribe();
   }, []);
 
   const filteredFood = foods.filter(food => {
-    const matchesSearch = food.name.toLowerCase().includes((searchTerm || '').toLowerCase());
+    const matchesSearch = food.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesService = activeService === 'All' || food.category === activeService || food.category === 'Both';
     const matchesType = activeType === 'All' || food.type === activeType;
     return matchesSearch && matchesService && matchesType;
@@ -44,13 +46,13 @@ export default function UserMenu({ searchTerm }) {
           <h1 className="serif text-5xl mb-2 italic">Our Exquisite Menu</h1>
           <p className="text-beige-500 font-medium">Categorized and sorted for your convenience.</p>
         </div>
-
+        
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] text-beige-400 font-bold uppercase tracking-widest pl-2">Service Type</span>
             <div className="flex gap-1 bg-white p-1.5 rounded-2xl border border-beige-100 shadow-sm">
-              {['All', 'Food Trays', 'Packed lunch'].map(tab => (
-                <button
+              {['All', 'Food Trays', 'Packed Lunch'].map(tab => (
+                <button 
                   key={tab}
                   onClick={() => setActiveService(tab)}
                   className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -66,8 +68,8 @@ export default function UserMenu({ searchTerm }) {
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] text-beige-400 font-bold uppercase tracking-widest pl-2">Course Type</span>
             <div className="flex gap-1 bg-white p-1.5 rounded-2xl border border-beige-100 shadow-sm">
-              {['All', 'Appetizer', 'Main Dish', 'Dessert', 'Drinks'].map(tab => (
-                <button
+              {['All', 'Appetizer', 'Main Dish', 'Dessert'].map(tab => (
+                <button 
                   key={tab}
                   onClick={() => setActiveType(tab)}
                   className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -82,7 +84,7 @@ export default function UserMenu({ searchTerm }) {
 
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] text-beige-400 font-bold uppercase tracking-widest pl-2">Sort By</span>
-            <select
+            <select 
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-white border border-beige-100 p-3 rounded-2xl text-xs font-bold text-beige-700 focus:outline-none focus:ring-2 focus:ring-beige-400 shadow-sm"
@@ -96,24 +98,23 @@ export default function UserMenu({ searchTerm }) {
         </div>
       </div>
 
-      <AnimatePresence mode="popLayout">
-        <motion.div
+      <AnimatePresence mode='popLayout'>
+        <motion.div 
           layout
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
         >
           {filteredFood.map((food) => (
-            <motion.div
+            <motion.div 
               layout
               key={food.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="group bg-white rounded-[32px] overflow-hidden border border-beige-100 shadow-sm hover:shadow-xl transition-all duration-500 flex flex-col"
+              className="group bg-white rounded-[32px] overflow-hidden border border-beige-100 shadow-sm hover:shadow-xl transition-all duration-500"
             >
-              {/* Fixed height image */}
-              <div className="relative h-48 overflow-hidden flex-shrink-0">
-                <img
-                  src={food.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800'}
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <img 
+                  src={food.imageUrl || `https://source.unsplash.com/800x600/?catering,food,${food.type}`} 
                   alt={food.name}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 />
@@ -126,28 +127,14 @@ export default function UserMenu({ searchTerm }) {
                   </span>
                 </div>
               </div>
-
-              {/* Card body — flex-grow so all cards stretch to same height in row */}
-              <div className="p-6 flex flex-col flex-1">
-                {/* Name + price */}
-                <div className="flex justify-between items-start mb-2 gap-2">
-                  <h3 className="serif text-lg font-bold text-beige-900 group-hover:text-beige-700 transition-colors leading-tight line-clamp-2">
-                    {food.name}
-                  </h3>
-                  <span className="font-black text-lg text-beige-800 shrink-0">₱{food.price}</span>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="serif text-xl font-bold text-beige-900 group-hover:text-beige-700 transition-colors">{food.name}</h3>
+                  <span className="font-bold text-lg text-beige-800">₱{food.price}</span>
                 </div>
-
-                {/* Description — fixed height so cards align */}
-                <p className="text-xs text-beige-400 font-medium line-clamp-2 italic leading-relaxed flex-1">
-                  "{food.description}"
-                </p>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-beige-50">
-                  <span className="text-[10px] text-beige-400 font-bold uppercase tracking-widest">
-                    {food.servingsPerTray ? `Good for ${food.servingsPerTray} pax/tray` : food.category === 'Food Trays' ? 'Per tray' : '1 Box'}
-                  </span>
-                </div>
+                <p className="text-xs text-beige-400 font-medium mb-4 line-clamp-2 italic leading-relaxed">"{food.description}"</p>
+                
+                
               </div>
             </motion.div>
           ))}
