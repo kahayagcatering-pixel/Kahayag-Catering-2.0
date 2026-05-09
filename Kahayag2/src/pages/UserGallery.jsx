@@ -1,207 +1,194 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Image as ImageIcon, Calendar, X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Utensils, Filter } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
-export default function UserGallery({ searchTerm }) {
-  const [events, setEvents] = useState([]);
+const CATEGORIES = ['All', 'Food Trays', 'Packed lunch', 'Both'];
+const TYPES = ['All', 'Appetizer', 'Main Dish', 'Dessert', 'Drinks'];
+
+export default function UserMenu({ searchTerm }) {
+  const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [currentImageIdx, setCurrentImageIdx] = useState(0);
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('name-asc');
 
   useEffect(() => {
-    const q = query(collection(db, 'gallery'), orderBy('date', 'desc'));
+    const q = query(collection(db, 'foods'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setFoods(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'gallery');
+      handleFirestoreError(error, OperationType.LIST, 'foods');
     });
     return () => unsubscribe();
   }, []);
 
-  const filteredEvents = events.filter(e =>
-    (e.title || '').toLowerCase().includes((searchTerm || '').toLowerCase())
-  );
+  const filteredFood = foods.filter(food => {
+    const matchesSearch = food.name.toLowerCase().includes((searchTerm || '').toLowerCase());
+    const matchesCategory = categoryFilter === 'All' || food.category === categoryFilter || food.category === 'Both';
+    const matchesType = typeFilter === 'All' || categoryFilter === 'Packed lunch' || food.type === typeFilter;
+    return matchesSearch && matchesCategory && matchesType;
+  }).sort((a, b) => {
+    if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+    if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+    if (sortBy === 'price-asc') return a.price - b.price;
+    if (sortBy === 'price-desc') return b.price - a.price;
+    return 0;
+  });
 
-  const openLightbox = (event) => {
-    setSelectedEvent(event);
-    setCurrentImageIdx(0);
-  };
-
-  const nextImage = () => {
-    if (!selectedEvent) return;
-    setCurrentImageIdx((prev) => (prev + 1) % selectedEvent.images.length);
-  };
-
-  const prevImage = () => {
-    if (!selectedEvent) return;
-    setCurrentImageIdx((prev) => (prev - 1 + selectedEvent.images.length) % selectedEvent.images.length);
-  };
-
-  if (loading) return <div className="flex items-center justify-center p-20 text-beige-400 italic">Exploring archive...</div>;
+  if (loading) return <div className="flex items-center justify-center p-20 text-beige-400">Loading menu...</div>;
 
   return (
-    <div className="space-y-12 pb-20">
-      <div className="space-y-4">
-        <h1 className="serif text-5xl font-bold italic text-beige-900 leading-tight">Celebration Gallery</h1>
-        <p className="text-sm font-bold text-beige-400 uppercase tracking-[0.3em] flex items-center gap-3">
-          Our finest culinary moments <span className="w-12 h-[1px] bg-beige-200"></span> Inspiring your next event
-        </p>
-      </div>
-
-      {/* Grid instead of columns — uniform card heights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {filteredEvents.map((event, idx) => (
-          <motion.div
-            key={event.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            onClick={() => openLightbox(event)}
-            className="relative group cursor-pointer bg-white rounded-[40px] overflow-hidden border border-beige-50 hover:shadow-2xl transition-all duration-700"
-          >
-            {/* Fixed aspect ratio — key fix */}
-            <div className="relative aspect-[4/3] overflow-hidden bg-beige-50">
-              {event.images?.[0] ? (
-                <img
-                  src={event.images[0]}
-                  alt={event.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-beige-200">
-                  <ImageIcon size={48} />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-beige-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center backdrop-blur-[2px]">
-                <div className="bg-white/90 p-4 rounded-full text-beige-900 shadow-xl opacity-0 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500 delay-100">
-                  <ImageIcon size={24} />
-                </div>
-              </div>
-              {event.images?.length > 1 && (
-                <div className="absolute top-4 right-4 bg-white/90 px-3 py-1 rounded-full text-[10px] font-black text-beige-800">
-                  +{event.images.length - 1} more
-                </div>
-              )}
-            </div>
-
-            <div className="p-8">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-beige-400">{event.type}</span>
-              <h3 className="serif text-2xl font-bold text-beige-900 mt-2 italic truncate">{event.title}</h3>
-              <div className="flex items-center gap-4 mt-6 pt-6 border-t border-beige-50">
-                <div className="flex items-center gap-2 text-[10px] font-black text-beige-400 uppercase tracking-widest">
-                  <Calendar size={12} className="text-beige-300" />
-                  {format(new Date(event.date + 'T00:00:00'), 'MMMM yyyy')}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {filteredEvents.length === 0 && (
-        <div className="py-32 text-center">
-          <div className="bg-white w-20 h-20 rounded-[30px] shadow-sm flex items-center justify-center mx-auto mb-8 border border-beige-100 text-beige-200">
-            <Search size={40} />
-          </div>
-          <h3 className="serif text-3xl text-beige-800 italic mb-2">No event found</h3>
-          <p className="text-beige-400 font-medium">Try searching for a different celebration.</p>
+    <div className="space-y-10 pb-20">
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+        <div>
+          <h1 className="serif text-5xl mb-2 italic">Our Exquisite Menu</h1>
+          <p className="text-beige-500 font-medium">Categorized and sorted for your convenience.</p>
         </div>
-      )}
+      </div>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-        {selectedEvent && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-beige-900/95 backdrop-blur-2xl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-6xl p-6 sm:p-12 flex flex-col md:flex-row gap-12 items-center"
+      {/* Filter Bar */}
+      <div className="p-6 bg-white border border-beige-100 rounded-[32px] shadow-sm space-y-4">
+        {/* Category */}
+        <div className="flex flex-wrap gap-3 items-center">
+          <span className="text-[10px] font-black text-beige-300 uppercase tracking-widest mr-1">Category</span>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => { setCategoryFilter(cat); setTypeFilter('All'); }}
+              className={`px-5 py-2.5 rounded-[16px] text-[10px] font-black uppercase tracking-widest border transition-all ${
+                categoryFilter === cat
+                  ? 'bg-beige-900 text-white border-beige-900 shadow-lg'
+                  : 'bg-white text-beige-400 border-beige-100 hover:bg-beige-50 hover:border-beige-300'
+              }`}
             >
-              <button
-                onClick={() => setSelectedEvent(null)}
-                className="absolute top-10 right-10 z-10 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md"
-              >
-                <X size={24} />
-              </button>
+              {cat}
+            </button>
+          ))}
+        </div>
 
-              <div className="flex-1 relative w-full h-[50vh] md:h-[70vh] flex items-center justify-center">
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={currentImageIdx}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    src={selectedEvent.images[currentImageIdx]}
-                    alt={`${selectedEvent.title} - ${currentImageIdx + 1}`}
-                    className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl"
-                  />
-                </AnimatePresence>
+        {/* Type — hidden for Packed Lunch */}
+        <AnimatePresence>
+          {categoryFilter !== 'Packed lunch' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex flex-wrap gap-3 items-center overflow-hidden"
+            >
+              <span className="text-[10px] font-black text-beige-300 uppercase tracking-widest mr-1">Type</span>
+              {TYPES.map(t => (
+                <button
+                  key={t}
+                  onClick={() => setTypeFilter(t)}
+                  className={`px-5 py-2.5 rounded-[16px] text-[10px] font-black uppercase tracking-widest border transition-all ${
+                    typeFilter === t
+                      ? 'bg-beige-700 text-white border-beige-700 shadow-md'
+                      : 'bg-white text-beige-400 border-beige-100 hover:bg-beige-50 hover:border-beige-300'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                {selectedEvent.images.length > 1 && (
+        {/* Sort */}
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-black text-beige-300 uppercase tracking-widest mr-1">Sort</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="bg-white border border-beige-100 px-4 py-2.5 rounded-[16px] text-[10px] font-black text-beige-700 uppercase tracking-widest focus:outline-none focus:ring-2 focus:ring-beige-400 shadow-sm"
+          >
+            <option value="name-asc">Name (A–Z)</option>
+            <option value="name-desc">Name (Z–A)</option>
+            <option value="price-asc">Price (Low → High)</option>
+            <option value="price-desc">Price (High → Low)</option>
+          </select>
+        </div>
+      </div>
+
+      <p className="text-[10px] font-black text-beige-300 uppercase tracking-widest pl-2">
+        {filteredFood.length} item{filteredFood.length !== 1 ? 's' : ''} shown
+      </p>
+
+      {/* Grid — same as ManageFood */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+        {filteredFood.map(food => (
+          <motion.div
+            key={food.id}
+            layout
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="group relative bg-white rounded-[50px] p-10 border border-beige-100 shadow-sm hover:shadow-2xl transition-all duration-700 overflow-hidden"
+          >
+            {/* Icon / image thumbnail */}
+            <div className="flex justify-between items-start mb-8 relative z-10">
+              <div className="w-16 h-16 bg-beige-50 rounded-[28px] overflow-hidden flex items-center justify-center text-beige-900 shadow-inner group-hover:bg-beige-900 group-hover:text-white transition-all duration-500">
+                {food.imageUrl
+                  ? <img src={food.imageUrl} alt={food.name} className="w-full h-full object-cover" />
+                  : <Utensils size={32} />
+                }
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-beige-400">{food.category}</span>
+                {food.type && (
                   <>
-                    <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all backdrop-blur-md"><ChevronLeft size={24} /></button>
-                    <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 p-4 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all backdrop-blur-md"><ChevronRight size={24} /></button>
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                      {selectedEvent.images.map((_, i) => (
-                        <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i === currentImageIdx ? 'w-8 bg-white' : 'w-2 bg-white/30'}`}></div>
-                      ))}
-                    </div>
+                    <span className="text-beige-200 text-[8px]">●</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-beige-700">{food.type}</span>
+                  </>
+                )}
+                {food.servingsPerTray && (
+                  <>
+                    <span className="text-beige-200 text-[8px]">●</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-beige-500">{food.servingsPerTray} pax/tray</span>
                   </>
                 )}
               </div>
 
-              <div className="w-full md:w-80 space-y-8 text-white">
+              <h3 className="serif text-3xl font-bold text-beige-800 leading-tight group-hover:italic transition-all duration-500">
+                {food.name}
+              </h3>
+
+              <p className="text-sm text-beige-500 font-medium leading-relaxed italic opacity-80 min-h-[60px] line-clamp-3">
+                "{food.description}"
+              </p>
+
+              <div className="pt-6 mt-6 border-t border-beige-50 flex justify-between items-end">
                 <div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-beige-400">{selectedEvent.type}</span>
-                  <h2 className="serif text-5xl font-bold italic mt-4 leading-tight">{selectedEvent.title}</h2>
+                  <p className="text-[10px] font-black text-beige-300 uppercase tracking-widest mb-1">Price per Head</p>
+                  <p className="text-3xl font-black text-beige-900">₱{food.price}</p>
                 </div>
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-white/10 rounded-2xl"><Calendar size={20} className="text-beige-300" /></div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-beige-400">Captured On</p>
-                      <p className="text-lg font-bold">{format(new Date(selectedEvent.date + 'T00:00:00'), 'PPPP')}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-white/10 rounded-2xl"><ImageIcon size={20} className="text-beige-300" /></div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-beige-400">Collection Size</p>
-                      <p className="text-lg font-bold">{selectedEvent.images.length} High-Res Assets</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Thumbnail strip */}
-                {selectedEvent.images.length > 1 && (
-                  <div className="grid grid-cols-4 gap-2 pt-4">
-                    {selectedEvent.images.map((url, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentImageIdx(i)}
-                        className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${i === currentImageIdx ? 'border-white' : 'border-transparent opacity-50 hover:opacity-80'}`}
-                      >
-                        <img src={url} alt="" className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="pt-4">
-                  <p className="text-xs text-beige-500 leading-relaxed font-medium italic opacity-60">
-                    "This event exemplifies our dedication to refined taste and aesthetic precision in catering."
-                  </p>
-                </div>
+                <span className="px-3 py-1 bg-beige-50 border border-beige-100 rounded-full text-[9px] font-bold text-beige-500 uppercase tracking-widest">
+                  {food.category === 'Packed lunch' ? '1 box' : 'per tray'}
+                </span>
               </div>
-            </motion.div>
+            </div>
+
+            {/* Decorative circle */}
+            <div className="absolute -bottom-8 -right-8 w-40 h-40 bg-beige-50/30 rounded-full transition-transform group-hover:scale-150 duration-700" />
+          </motion.div>
+        ))}
+      </div>
+
+      {filteredFood.length === 0 && (
+        <div className="text-center py-24">
+          <div className="bg-beige-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-beige-300">
+            <Filter size={40} />
           </div>
-        )}
-      </AnimatePresence>
+          <h3 className="serif text-2xl text-beige-800 mb-2">No delicacies found</h3>
+          <p className="text-beige-400">Try adjusting your filters or search term.</p>
+        </div>
+      )}
     </div>
   );
 }
