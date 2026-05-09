@@ -10,7 +10,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 const ADMIN_EMAIL = 'kahayagcatering@gmail.com';
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const EMAILJS_PUBLIC_KEY = 'guElQdQl4ZlB14DU1';
 
 export default function AuthPage({ setUser }) {
   const [isLogin, setIsLogin] = useState(true);
