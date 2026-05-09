@@ -7,7 +7,11 @@ import { auth, googleProvider, signInWithPopup, db, handleFirestoreError, Operat
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-const ADMIN_EMAIL = 'kahayagcatering@gmail.com';
+const ADMIN_EMAIL = [
+  'kahayagcatering@gmail.com',
+  'mabelleabatayo@gmail.com',
+  // just add here
+];
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = 'template_j455ie1';
 const EMAILJS_PUBLIC_KEY = 'guElQdQl4ZlB14DU1';
