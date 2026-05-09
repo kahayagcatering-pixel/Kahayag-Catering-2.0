@@ -9,7 +9,8 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const ADMIN_EMAIL = 'kahayagcatering@gmail.com';
 const ADMIN_EMAIL_2 = 'mabelleabatayo@gmail.com';
-const ADMIN_EMAILS = [ADMIN_EMAIL, ADMIN_EMAIL_2];
+const ADMIN_EMAIL_3 = 'kahayagkreations@gmail.com';
+const ADMIN_EMAILS = [ADMIN_EMAIL, ADMIN_EMAIL_2, ADMIN_EMAIL_3];
 
 const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = 'template_j455ie1';
