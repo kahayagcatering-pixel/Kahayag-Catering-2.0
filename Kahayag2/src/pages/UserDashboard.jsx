@@ -87,7 +87,7 @@ const Sidebar = ({ user, handleLogout }) => {
       <div className="p-6 border-t border-beige-100">
         <div className="flex items-center gap-3 p-3 bg-beige-50 rounded-2xl mb-4">
           <div className="w-10 h-10 rounded-full bg-beige-300 flex items-center justify-center font-bold text-beige-800 uppercase">
-            {user.name.charAt(0)}
+            {user?.name?.charAt(0) || '?'}
           </div>
           <div className="flex-1 overflow-hidden">
             <p className="text-sm font-bold text-beige-900 truncate">{user.name}</p>
