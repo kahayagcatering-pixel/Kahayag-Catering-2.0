@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { 
   Inbox, 
@@ -11,7 +11,9 @@ import {
   Search,
   Bell,
   Plus,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Menu,
+  X
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -24,7 +26,7 @@ import FinalizedHistory from './FinalizedHistory';
 import ManageFood from './ManageFood';
 import ManageGallery from './ManageGallery';
 
-const AdminSidebar = ({ user, handleLogout }) => {
+const AdminSidebar = ({ user, handleLogout, isMobile, sidebarOpen, closeSidebar }) => {
   const location = useLocation();
   
   const menuItems = [
@@ -38,7 +40,13 @@ const AdminSidebar = ({ user, handleLogout }) => {
   ];
 
   return (
-    <div className="w-72 bg-beige-900 flex flex-col h-screen fixed left-0 top-0 text-white z-30">
+    <div className={`${
+      isMobile
+        ? `fixed left-0 top-0 h-screen w-72 z-40 transform transition-transform duration-300 ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`
+        : 'w-72 fixed left-0 top-0'
+    } bg-beige-900 flex flex-col h-screen text-white`}>
       <div className="p-8 border-b border-white/10 mb-6 flex flex-col items-center text-center">
         <img src="/KahayagLogo.png" className="w-24 h-auto mb-2 brightness-0 invert" />
         <div>
@@ -54,6 +62,7 @@ const AdminSidebar = ({ user, handleLogout }) => {
           <Link 
             key={item.name} 
             to={item.path}
+            onClick={() => isMobile && closeSidebar()}
             className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
               location.pathname.startsWith(item.path) 
                 ? 'bg-white text-beige-900 shadow-xl' 
@@ -94,6 +103,14 @@ import { signOut } from 'firebase/auth';
 export default function AdminDashboard({ user, setUser }) {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -107,29 +124,45 @@ export default function AdminDashboard({ user, setUser }) {
 
   return (
     <div className="flex min-h-screen bg-beige-50">
-      <AdminSidebar user={user} handleLogout={handleLogout} />
+      <AdminSidebar 
+        user={user} 
+        handleLogout={handleLogout} 
+        isMobile={isMobile}
+        sidebarOpen={sidebarOpen}
+        closeSidebar={() => setSidebarOpen(false)}
+      />
       
-      <div className="flex-1 ml-72">
-        <header className="h-24 bg-white border-b border-beige-100 flex items-center justify-between px-10 sticky top-0 z-20">
-          <div className="relative max-w-md w-full">
+      <div className={`flex-1 flex flex-col ${isMobile ? '' : 'ml-72'}`}>
+        <header className="h-24 bg-white border-b border-beige-100 flex items-center justify-between px-4 md:px-10 sticky top-0 z-20">
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-beige-50 rounded-lg transition-all"
+            >
+              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          )}
+          
+          <div className={`relative ${isMobile ? 'flex-1 mx-2' : 'max-w-md w-full'}`}>
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-beige-400" size={18} />
             <input 
               type="text" 
-              placeholder="Search orders, clients, or menu..." 
+              placeholder="Search orders, clients..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3 bg-beige-50 border border-beige-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-beige-400 transition-all text-sm"
             />
           </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full border border-green-100">
+
+          <div className="flex items-center gap-2 md:gap-6 ml-4">
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-green-50 rounded-full border border-green-100">
                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                <span className="text-xs font-bold text-green-700 uppercase">Live System</span>
             </div>
           </div>
         </header>
 
-        <main className="p-10 pb-20">
+        <main className="flex-1 p-4 md:p-10 pb-20 overflow-y-auto">
           <Routes>
             <Route path="requests" element={<OrderRequests searchTerm={searchTerm} />} />
             <Route path="approved" element={<ApprovedOrders searchTerm={searchTerm} />} />

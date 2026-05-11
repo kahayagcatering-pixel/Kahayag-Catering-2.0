@@ -8,7 +8,9 @@ import {
     MapPin, 
     AlertCircle,
     Check,
-    Trash2
+    Trash2,
+    Menu,
+    X
 } from 'lucide-react';
 import { format, isSameDay, isAfter } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -21,6 +23,14 @@ export default function ApprovedOrders({ searchTerm }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [now, setNow] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60000);
@@ -89,76 +99,107 @@ export default function ApprovedOrders({ searchTerm }) {
   if (loading) return <div className="flex items-center justify-center p-20 text-beige-400">Loading schedule...</div>;
 
   return (
-    <div className="flex gap-8 h-full">
-      <div className="w-1/2 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-        <div className="flex justify-between items-center mb-4">
-            <h1 className="serif text-3xl">Approved Schedule</h1>
-            <div className="text-right">
-                <p className="text-[10px] uppercase font-bold text-beige-400">Current System Time</p>
-                <p className="text-sm font-bold text-beige-800">{format(now, 'PPP p')}</p>
-            </div>
+    <div className="flex gap-8 h-full relative">
+      {/* Mobile hamburger menu */}
+      {isMobile && (
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="fixed top-4 left-4 z-50 p-2 bg-beige-900 text-white rounded-lg lg:hidden"
+        >
+          {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      )}
+
+      {/* Overlay for mobile */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div 
+        className={`${
+          isMobile
+            ? `fixed left-0 top-0 h-full w-3/4 bg-white z-40 transform transition-transform duration-300 ${
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              } pt-16 overflow-y-auto custom-scrollbar`
+            : 'w-1/2 space-y-6 overflow-y-auto pr-2 custom-scrollbar'
+        } space-y-6`}
+      >
+        <div className={`${isMobile ? 'px-4 space-y-6' : ''} flex flex-col gap-6`}>
+          <div className="flex justify-between items-center mb-4">
+              <h1 className="serif text-3xl">Approved Schedule</h1>
+              <div className="text-right">
+                  <p className="text-[10px] uppercase font-bold text-beige-400">Current System Time</p>
+                  <p className="text-sm font-bold text-beige-800">{format(now, 'PPP p')}</p>
+              </div>
+          </div>
+
+          {filteredOrders.map((order, idx) => (
+            <motion.div 
+              key={order.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              onClick={() => {
+                setSelectedOrder(order);
+                if (isMobile) setSidebarOpen(false);
+              }}
+              className={`cursor-pointer p-6 rounded-[24px] border transition-all duration-300 ${
+                  selectedOrder?.id === order.id 
+                  ? 'bg-beige-900 text-white border-beige-900 shadow-xl scale-[1.02]' 
+                  : 'bg-white border-beige-100 hover:shadow-md'
+              }`}
+            >
+              <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                        <CheckCircle size={20} />
+                      </div>
+                      <div>
+                          <h3 className="font-bold">{order.userName}</h3>
+                          <p className={`text-xs font-bold italic ${selectedOrder?.id === order.id ? 'text-beige-300' : 'text-beige-600'}`}>
+                            {order.eventName || '—'}
+                          </p>
+                          <p className={`text-[10px] uppercase font-bold ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-500'}`}>
+                            {order.eventType || order.service}
+                          </p>
+                      </div>
+                  </div>
+                  <div className="text-right">
+                      <p className={`text-sm font-bold ${selectedOrder?.id === order.id ? 'text-white' : 'text-beige-900'}`}>
+                        {format(parseOrderDate(order.date), 'MMM dd')}
+                      </p>
+                      <p className="text-xs opacity-60">{order.time}</p>
+                  </div>
+              </div>
+            </motion.div>
+          ))}
+
+          {filteredOrders.length === 0 && (
+             <div className="py-20 text-center opacity-40">
+               <CheckCircle size={48} className="mx-auto mb-4" />
+               <p>No active schedule at the moment.</p>
+             </div>
+          )}
         </div>
-
-        {filteredOrders.map((order, idx) => (
-          <motion.div 
-            key={order.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            onClick={() => setSelectedOrder(order)}
-            className={`cursor-pointer p-6 rounded-[24px] border transition-all duration-300 ${
-                selectedOrder?.id === order.id 
-                ? 'bg-beige-900 text-white border-beige-900 shadow-xl scale-[1.02]' 
-                : 'bg-white border-beige-100 hover:shadow-md'
-            }`}
-          >
-            <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-                      <CheckCircle size={20} />
-                    </div>
-                    <div>
-                        <h3 className="font-bold">{order.userName}</h3>
-                        {/* ── FIX: show event name below customer name in list card ── */}
-                        <p className={`text-xs font-bold italic ${selectedOrder?.id === order.id ? 'text-beige-300' : 'text-beige-600'}`}>
-                          {order.eventName || '—'}
-                        </p>
-                        <p className={`text-[10px] uppercase font-bold ${selectedOrder?.id === order.id ? 'text-beige-400' : 'text-beige-500'}`}>
-                          {order.eventType || order.service}
-                        </p>
-                    </div>
-                </div>
-                <div className="text-right">
-                    <p className={`text-sm font-bold ${selectedOrder?.id === order.id ? 'text-white' : 'text-beige-900'}`}>
-                      {format(parseOrderDate(order.date), 'MMM dd')}
-                    </p>
-                    <p className="text-xs opacity-60">{order.time}</p>
-                </div>
-            </div>
-          </motion.div>
-        ))}
-
-        {filteredOrders.length === 0 && (
-           <div className="py-20 text-center opacity-40">
-             <CheckCircle size={48} className="mx-auto mb-4" />
-             <p>No active schedule at the moment.</p>
-           </div>
-        )}
       </div>
 
-      <div className="w-1/2">
+      {/* Detail panel */}
+      <div className={`${isMobile ? 'w-full' : 'w-1/2'}`}>
         {selectedOrder ? (
           <motion.div 
             key={selectedOrder.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="card-luxury p-10 space-y-8 sticky top-0"
+            className={`card-luxury p-10 space-y-8 ${isMobile ? '' : 'sticky top-0'} overflow-y-auto`}
           >
             <div className="flex justify-between items-start">
                <div>
                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 inline-block">Order Approved</span>
                  <h2 className="serif text-3xl">{selectedOrder.userName}</h2>
-                 {/* ── FIX: show event name prominently in detail panel ── */}
                  {selectedOrder.eventName && (
                    <p className="text-beige-900 font-bold text-lg mt-1 italic">
                      "{selectedOrder.eventName}"
@@ -171,7 +212,7 @@ export default function ApprovedOrders({ searchTerm }) {
                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 py-8 border-y border-beige-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-8 border-y border-beige-100">
                 <div className="space-y-4">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-beige-50 rounded-xl text-beige-800"><Calendar size={18} /></div>
@@ -232,7 +273,7 @@ export default function ApprovedOrders({ searchTerm }) {
             </div>
 
             <div className="flex flex-col gap-4 pt-6">
-                <div className="flex gap-4">
+                <div className="flex flex-col md:flex-row gap-4">
                     <button 
                       onClick={() => navigate('/dashboard/admin-chat', { state: { userId: selectedOrder.userId } })}
                       className="flex-1 flex items-center justify-center gap-2 px-6 py-4 bg-white border border-beige-200 rounded-2xl font-bold hover:bg-beige-50 transition-all shadow-sm"

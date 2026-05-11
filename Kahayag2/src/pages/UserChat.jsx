@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useLocation } from 'react-router-dom';
-import { Send, Paperclip, Image, Search, MoreHorizontal, MessageSquare } from 'lucide-react';
+import { Send, Paperclip, Image, MoreHorizontal, MessageSquare, Check, ArrowLeft } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, onSnapshot, query, orderBy, addDoc, Timestamp, doc, setDoc } from 'firebase/firestore';
 
@@ -11,13 +11,19 @@ export default function UserChat({ user }) {
   const [inputText, setInputText] = useState('');
   const [activeOrderId, setActiveOrderId] = useState(location.state?.orderId || null);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [showChat, setShowChat] = useState(false);
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
     
-    // Using a simpler collection for now: messages collection with senderId and recipientId
-    // Or chats/{userId}/messages
     const q = query(
       collection(db, 'chats', user.uid, 'messages'),
       orderBy('createdAt', 'asc')
@@ -27,7 +33,6 @@ export default function UserChat({ user }) {
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
       
-      // Clear notification when user views chat
       if (user) {
         setDoc(doc(db, 'conversations', user.uid), { unreadByUser: false }, { merge: true });
       }
@@ -60,12 +65,11 @@ export default function UserChat({ user }) {
     try {
       await addDoc(collection(db, 'chats', user.uid, 'messages'), newMessage);
       
-      // Update global conversation index for admin visibility
       await setDoc(doc(db, 'conversations', user.uid), {
         lastMessage: inputText,
         lastMessageAt: Timestamp.now(),
         userName: user.name || 'User',
-        unreadByAdmin: true // Admin sees notification
+        unreadByAdmin: true
       }, { merge: true });
 
       setInputText('');
@@ -80,115 +84,201 @@ export default function UserChat({ user }) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+
   if (loading) return <div className="flex items-center justify-center p-20 text-beige-400">Connecting to support...</div>;
 
   return (
-    <div className="h-[calc(100vh-160px)] flex bg-white rounded-[32px] overflow-hidden border border-beige-200 shadow-xl">
-      {/* Sidebar - Contacts/Context */}
-      <div className="w-80 border-r border-beige-100 flex flex-col bg-beige-50/50">
-        <div className="p-6 border-b border-beige-100">
-          <h2 className="display text-lg font-bold mb-4">Messages</h2>
-          
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4">
-             <div className="p-4 bg-beige-900 text-white rounded-2xl border border-beige-800 shadow-lg transition-all cursor-pointer">
-                <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold text-sm">Kahayag Admin</span>
-                    <span className="text-[10px] text-beige-400 font-bold uppercase tracking-wider">Support</span>
-                </div>
-                <p className="text-xs text-beige-300 truncate italic">
-                  {messages.length > 0 ? messages[messages.length-1].text : 'Start a chat with our admin...'}
-                </p>
-                {activeOrderId && (
-                   <div className="mt-3 text-[10px] bg-white/10 text-white px-2 py-1 rounded inline-block border border-white/10">
-                     Context: Order #{activeOrderId.slice(0, 8)}
-                   </div>
-                )}
-             </div>
-          </div>
-        </div>
-      </div>
+    <div className={`${isMobile ? 'h-[calc(100vh-120px)] flex flex-col' : 'h-[calc(100vh-160px)] flex'} bg-white rounded-[40px] overflow-hidden border border-beige-100 shadow-2xl`}>
 
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        <header className="p-6 border-b border-beige-100 flex justify-between items-center bg-white shadow-sm z-10">
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-beige-800 rounded-full flex items-center justify-center text-white font-bold text-lg">
-               K
-             </div>
-             <div>
-               <h3 className="font-bold text-beige-900">Kahayag Admin</h3>
-               <p className="text-xs text-green-500 flex items-center gap-1">
-                 <span className="w-2 h-2 bg-green-500 rounded-full"></span> Support Team
-               </p>
-             </div>
-          </div>
-          <button className="text-beige-400 hover:text-beige-800 transition-colors">
-            <MoreHorizontal size={20} />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-beige-50/10 custom-scrollbar" ref={scrollRef}>
-          {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center opacity-20 text-center py-20">
-              <MessageSquare size={48} className="mb-4" />
-              <p>No messages yet. Send a message to reach our admin board.</p>
+      {/* Desktop: Sidebar */}
+      {!isMobile && (
+        <div className="w-96 border-r border-beige-100 flex flex-col bg-beige-50/30">
+          <div className="p-8 border-b border-beige-100">
+            <div className="flex justify-between items-center">
+              <h2 className="serif text-2xl italic font-bold">Messages</h2>
+              <div className="bg-beige-900 text-white text-[10px] px-2 py-1 rounded-full font-bold">
+                Support
+              </div>
             </div>
-          )}
-          {messages.map((msg, idx) => {
-            const isMe = msg.senderId === user.uid;
-            return (
-              <motion.div 
-                key={msg.id}
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[70%] space-y-2`}>
-                   <div className={`p-4 rounded-3xl text-sm shadow-sm ${
-                     isMe 
-                      ? 'bg-beige-900 text-white rounded-br-none' 
-                      : 'bg-white border border-beige-100 text-beige-900 rounded-bl-none'
-                   }`}>
-                     {msg.text}
-                   </div>
-                   <p className={`text-[10px] text-beige-400 px-2 ${isMe ? 'text-right' : 'text-left'}`}>
-                     {formatTime(msg.createdAt)}
-                   </p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        <div className="p-6 border-t border-beige-100 flex items-center gap-4 bg-white">
-          <div className="flex gap-2">
-            <button className="p-3 bg-beige-50 text-beige-400 rounded-2xl hover:text-beige-800 transition-all">
-              <Image size={20} />
-            </button>
-            <button className="p-3 bg-beige-50 text-beige-400 rounded-2xl hover:text-beige-800 transition-all">
-              <Paperclip size={20} />
-            </button>
           </div>
-          <form className="flex-1 relative" onSubmit={handleSend}>
-            <input 
-              type="text" 
-              placeholder="Type your message..." 
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              className="w-full bg-beige-50 border border-beige-200 p-4 pr-16 rounded-3xl outline-none focus:ring-2 focus:ring-beige-400 transition-all text-sm"
-            />
-            <button 
-              type="submit"
-              disabled={!inputText.trim()}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-beige-800 text-white rounded-2xl hover:bg-beige-900 transition-all disabled:opacity-30"
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              className="p-5 rounded-3xl cursor-pointer transition-all border bg-beige-900 text-white border-beige-900 shadow-lg"
             >
-              <Send size={18} />
-            </button>
-          </form>
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold bg-white/10 text-white text-lg">
+                    K
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm tracking-tight">Kahayag Admin</p>
+                    <p className="text-[10px] font-mono text-beige-400">Support Team</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between items-end">
+                <p className="text-xs truncate italic max-w-[200px] text-beige-300">
+                  {lastMessage ? lastMessage.text : 'Start a conversation...'}
+                </p>
+                <p className="text-[10px] font-bold text-beige-400">
+                  {lastMessage ? formatTime(lastMessage.createdAt) : ''}
+                </p>
+              </div>
+              {activeOrderId && (
+                <div className="mt-3 text-[10px] bg-white/10 text-white px-2 py-1 rounded inline-block border border-white/10">
+                  Order #{activeOrderId.slice(0, 8)}
+                </div>
+              )}
+            </motion.div>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Mobile: Contact List View */}
+      {isMobile && !showChat && (
+        <div className="flex-1 flex flex-col bg-beige-50/30 overflow-hidden">
+          <div className="p-6 border-b border-beige-100 bg-white">
+            <div className="flex justify-between items-center">
+              <h2 className="serif text-2xl italic font-bold">Messages</h2>
+              <div className="bg-beige-900 text-white text-[10px] px-2 py-1 rounded-full font-bold">
+                Support
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowChat(true)}
+              className="p-4 rounded-3xl cursor-pointer transition-all border bg-white text-beige-800 border-beige-50 shadow-sm active:bg-beige-50"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold bg-beige-900 text-white text-lg flex-shrink-0">
+                    K
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm">Kahayag Admin</p>
+                    <p className="text-[10px] text-beige-500 truncate">
+                      {lastMessage ? lastMessage.text : 'Start a conversation...'}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-beige-300 font-bold flex-shrink-0 ml-2">
+                  {lastMessage ? formatTime(lastMessage.createdAt) : ''}
+                </p>
+              </div>
+              {activeOrderId && (
+                <div className="mt-1 ml-1 text-[10px] bg-beige-100 text-beige-600 px-2 py-1 rounded inline-block">
+                  Order #{activeOrderId.slice(0, 8)}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop & Mobile: Main Chat Area */}
+      {(!isMobile || (isMobile && showChat)) && (
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          <header className={`${isMobile ? 'p-4' : 'p-8'} border-b border-beige-50 flex justify-between items-center bg-white z-10 shadow-sm`}>
+            <div className="flex items-center gap-3 md:gap-5 flex-1">
+              {isMobile && (
+                <button
+                  onClick={() => setShowChat(false)}
+                  className="p-2 hover:bg-beige-50 rounded-lg transition-all"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              )}
+              <div className={`${isMobile ? 'w-10 h-10 text-sm' : 'w-14 h-14 text-xl'} bg-beige-900 rounded-3xl flex items-center justify-center text-white font-bold border border-beige-50`}>
+                K
+              </div>
+              <div className="min-w-0">
+                <h3 className={`serif font-bold italic text-beige-900 ${isMobile ? 'text-lg' : 'text-2xl'}`}>Kahayag Admin</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="text-[10px] font-black text-beige-400 uppercase tracking-widest">Support Team</span>
+                </div>
+              </div>
+            </div>
+            {!isMobile && (
+              <button className="p-3 bg-beige-50 text-beige-400 rounded-2xl hover:text-beige-800 transition-all border border-beige-100">
+                <MoreHorizontal size={20} />
+              </button>
+            )}
+          </header>
+
+          <div className={`flex-1 overflow-y-auto ${isMobile ? 'p-4' : 'p-10'} space-y-6 md:space-y-8 bg-beige-50/10 custom-scrollbar`} ref={scrollRef}>
+            {messages.length === 0 && (
+              <div className="h-full flex flex-col items-center justify-center opacity-20 text-center py-20">
+                <MessageSquare size={isMobile ? 40 : 48} className="mb-4" />
+                <p className="text-sm">No messages yet. Say hello to start chatting!</p>
+              </div>
+            )}
+            {messages.map((msg) => {
+              const isMe = msg.senderId === user.uid;
+              return (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`${isMobile ? 'max-w-[85%]' : 'max-w-[75%]'} space-y-2`}>
+                    <div className={`p-4 md:p-5 rounded-[32px] text-sm shadow-sm leading-relaxed ${
+                      isMe
+                        ? 'bg-beige-900 text-white rounded-br-none'
+                        : 'bg-white border border-beige-100 text-beige-800 rounded-bl-none shadow-md'
+                    }`}>
+                      {msg.text}
+                    </div>
+                    <div className={`flex items-center gap-2 px-3 ${isMe ? 'flex-row-reverse' : ''}`}>
+                      <p className="text-[10px] text-beige-300 font-bold tracking-widest uppercase">
+                        {formatTime(msg.createdAt)}
+                      </p>
+                      {isMe && <Check size={12} className="text-beige-200" />}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <div className={`${isMobile ? 'p-4 pt-2' : 'p-8 pt-0'} bg-white`}>
+            <form
+              className="flex items-center gap-3 md:gap-4 bg-beige-50 p-2 md:p-3 rounded-[32px] border border-beige-100 shadow-inner"
+              onSubmit={handleSend}
+            >
+              <div className={`flex gap-1 ${isMobile ? 'pl-1' : 'pl-2'}`}>
+                <button type="button" className="p-2 md:p-3 text-beige-400 hover:text-beige-800 transition-all hover:bg-white rounded-2xl">
+                  <Image size={isMobile ? 20 : 24} />
+                </button>
+                <button type="button" className="p-2 md:p-3 text-beige-400 hover:text-beige-800 transition-all hover:bg-white rounded-2xl">
+                  <Paperclip size={isMobile ? 20 : 24} />
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="Message..."
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                className="flex-1 bg-transparent py-3 text-sm font-medium outline-none text-beige-900 placeholder:text-beige-300"
+              />
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className="p-3 md:p-4 bg-beige-800 text-white rounded-2xl hover:bg-black transition-all disabled:opacity-20 shadow-xl active:scale-95"
+              >
+                <Send size={isMobile ? 18 : 24} />
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
